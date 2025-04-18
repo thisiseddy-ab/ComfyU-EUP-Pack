@@ -1,9 +1,20 @@
-import nodes
+#### BuiltIn Libs ####
+import os
+
+#### Third Party Libs ####
 import warnings
 
+#### Comfy Libs ####
+import nodes
+import folder_paths
+
 #### My Nodes #####
-from EUP.services.lat_upsc_pixel import LatentUpscalerPixelSpaceService
 from EUP.nodes.sampler import Tiled_KSampler, Tiled_KSamplerAdvanced
+
+#### Services ####
+from EUP.services.lat_upsc_pixel import LatentUpscalerPixelSpaceService
+from EUP.services.tiling import ULtimate_16KANDUPTilingService
+from EUP.services.image import ImageService
 
 
 
@@ -213,4 +224,189 @@ class AdvancedPixelTiledKSampleUpscalerService():
         refined_latent = self.tiledKsample(upscaled_latent, upscaled_images)
 
         return refined_latent
+
+from custom_nodes.comfyui_ultimatesdupscale.nodes import UltimateSDUpscaleCustomSample
+#from custom_nodes.comfyui-detail-daemon.nodes import DetailDaemon
+from comfy_extras.nodes_custom_sampler import KSamplerSelect
+
+class ULtimate_16KANDUPUpscalerService():
+
+    UPSCALER_SETTINGS = {
+        "1K": {
+            "ultimateUpscaler" : {
+                "cfg" : 3.5,
+                "denoise" : 0.35,
+                "tile_width" : 768,
+                "tile_height" : 768,
+                "force_uniform_tiles" : True,
+                "tiled_decode" : True,
+            },
+            "deamon_Sampler" : {
+                "detail_amount" : 0.50,
+                "start" : 0.10,
+                "end" : 0.90,
+                "bias" : 0.50,
+                "exponent" : 1.0,
+                "start_offset" : 0.0,
+                "end_offset" : 0.0,
+                "fade" : 0.0,
+                "smoooth" : True,
+                "cfg_scale_override" : 3.5,
+             },
+        },
+        "2K": {
+            "ultimateUpscaler" : {
+                "cfg" : 4.5,
+                "denoise" : 0.35,
+                "tile_width" : 768,
+                "tile_height" : 768,
+                "force_uniform_tiles" : True,
+                "tiled_decode" : True,
+            },
+            "deamon_Sampler" : {
+                "detail_amount" : 0.50,
+                "start" : 0.10,
+                "end" : 0.90,
+                "bias" : 0.50,
+                "exponent" : 1.0,
+                "start_offset" : 0.0,
+                "end_offset" : 0.0,
+                "fade" : 0.0,
+                "smoooth" : True,
+                "cfg_scale_override" : 4.5,
+             },
+        },
+        "4K": {
+            "ultimateUpscaler" : {
+                "cfg" : 3.5,
+                "denoise" : 0.25,
+                "tile_width" : 768,
+                "tile_height" : 768,
+                "force_uniform_tiles" : True,
+                "tiled_decode" : True,
+            },
+            "deamon_Sampler" : {
+                "detail_amount" : 0.45,
+                "start" : 0.10,
+                "end" : 0.90,
+                "bias" : 0.50,
+                "exponent" : 1.0,
+                "start_offset" : 0.0,
+                "end_offset" : 0.0,
+                "fade" : 0.0,
+                "smoooth" : True,
+                "cfg_scale_override" : 3.5,
+             },
+        },
+        "8K": {
+            "ultimateUpscaler" : {
+                "cfg" : 2.5,
+                "denoise" : 0.15,
+                "tile_width" : 1280,
+                "tile_height" : 1280,
+                "force_uniform_tiles" : True,
+                "tiled_decode" : True,
+            },
+            "deamon_Sampler" : {
+                "detail_amount" : 0.35,
+                "start" : 0.10,
+                "end" : 0.90,
+                "bias" : 0.50,
+                "exponent" : 1.0,
+                "start_offset" : 0.0,
+                "end_offset" : 0.0,
+                "fade" : 0.0,
+                "smoooth" : True,
+                "cfg_scale_override" : 2.5,
+             },
+        },
+        "16K": {
+            "ultimateUpscaler" : {
+                "cfg" : 1.5,
+                "denoise" : 0.05,
+                "tile_width" : 1280,
+                "tile_height" : 1280,
+                "force_uniform_tiles" : True,
+                "tiled_decode" : True,
+            },
+            "deamon_Sampler" : {
+                "detail_amount" : 0.25,
+                "start" : 0.10,
+                "end" : 0.90,
+                "bias" : 0.50,
+                "exponent" : 1.0,
+                "start_offset" : 0.0,
+                "end_offset" : 0.0,
+                "fade" : 0.0,
+                "smoooth" : True,
+                "cfg_scale_override" : 1.5,
+             },
+        },
+    }
+
+    def __init__(self):
+        self.output_dir = folder_paths.get_output_directory()
+        self.type = "output"
+
+        ## Services ## 
+        self.tiligService = ULtimate_16KANDUPTilingService()
+        self.imageService = ImageService()
+
+    def getSaveImagePath(self, filename_prefix, output_dir):
+        index = 1
+        while True:
+            filename_base = f"{filename_prefix}_{index:06d}"
+            filename = f"{filename_base}.pkl"
+            full_output_folder = output_dir
+            full_path = os.path.join(full_output_folder, filename)
+            if not os.path.exists(full_path):
+                return full_output_folder, filename, filename_prefix
+            index += 1
+    
+    def upscale(self, image, model, positive, negative, vae, upscale_by, seed, steps,
+                sampler_name, scheduler, upscale_model, pickle_prefix, tile_num, mode_type,
+                mask_blur, tile_padding, seam_fix_mode, seam_fix_denoise, seam_fix_mask_blur,
+                seam_fix_width, seam_fix_padding, force_uniform_tiles, tiled_decode, 
+                custom_sampler=None, custom_sigmas=None):
+        
+        width, height, count = self.imageService.getImageSize(image)
+
+        averagSize = (width + height) / 2
+        
+        deamonSampler = nodes.NODE_CLASS_MAPPINGS['DetailDaemonSamplerNode']()
+        sdUpscaler = UltimateSDUpscaleCustomSample()
+        for upscaleNum in range(upscale_by / 2):
+            chosenImage = image
+            if averagSize <= 1024:
+                nomrmalSampler = KSamplerSelect().get_sampler(sampler_name)
+                deamonSettings = self.UPSCALER_SETTINGS.get("1K").get("deamon_Sampler")
+                customSampler = deamonSampler.go(
+                    sampler=nomrmalSampler,
+                    detail_amount=deamonSettings.get("detail_amount"),
+                    start=deamonSettings.get("start"),
+                    end=deamonSettings.get("end"),
+                    bias=deamonSettings.get("bias"),
+                    exponent=deamonSettings.get("exponent"),
+                    start_offset=deamonSettings.get("start_offset"),
+                    end_offset=deamonSettings.get("end_offset"),
+                    fade=deamonSettings.get("fade"),
+                    smooth=deamonSettings.get("smoooth"),
+                    cfg_scale_override=deamonSettings.get("cfg_scale_override")
+                )
+                upscalerSettings = self.UPSCALER_SETTINGS.get("1K").get("ultimateUpscaler")
+                chosenImage = sdUpscaler.upscale(
+                    image=chosenImage, model=model, positive=positive, negative=negative, vae=vae,upscale_by=upscale_by, seed=seed, steps=steps,
+                    cfg=upscalerSettings.get("cfg"), sampler_name=sampler_name, scheduler=scheduler, denoise=upscalerSettings.get("denoise"),
+                    mode_type=mode_type, tile_width=upscalerSettings.get("tile_width"), tile_height=upscalerSettings.get("tile_height"),
+                    mask_blur=mask_blur, tile_padding=tile_padding, seam_fix_mode=seam_fix_mode, seam_fix_denoise=seam_fix_denoise, 
+                    seam_fix_mask_blur=seam_fix_mask_blur, seam_fix_width=seam_fix_width, seam_fix_padding=seam_fix_padding, 
+                    force_uniform_tiles=upscalerSettings.get("force_uniform_tiles"), tiled_decode=upscalerSettings.get("tiled_decode"),
+                    upscale_model=upscale_model, custom_sampler=customSampler, custom_sigmas=custom_sigmas
+                    )
+
+        full_output_folder, filename, filename_prefix = folder_paths.get_save_image_path(filename_prefix, self.output_dir)
+
+
+
+
     

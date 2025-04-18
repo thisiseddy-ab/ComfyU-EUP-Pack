@@ -1676,3 +1676,18 @@ class TilingService(Tiling_Strategy_Base):
         self.mp_rthrc_Service  = MP_RTHRCService()
         # mp_nu - Stands for Multi-Pass Non-Uniform Tiling Strategy
         self.mp_nu_Service = MP_NUService()
+
+
+# Ultimate 16K and Up Tiling 
+class ULtimate_16KANDUPTilingService(Tiling_Strategy_Base):
+
+    def getImageTilesPos(self, tileNum: int):
+        tilePos = []
+        return tilePos
+
+    def tileImageTiles(self, tilePos):
+        self.tensorService.getSlice(tilePos)
+
+    def loopThroughImageTilesGenerator(filePath: str):
+        pass
+

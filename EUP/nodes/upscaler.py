@@ -7,6 +7,7 @@ import comfy.sample
 #### Services ####
 from EUP.services.status import StatusService
 from EUP.services.upscaler import PixelTiledKSampleUpscalerService, AdvancedPixelTiledKSampleUpscalerService
+from EUP.services.upscaler import ULtimate_16KANDUPUpscalerService
 
 SCHEDULERS = comfy.samplers.KSampler.SCHEDULERS + ['AYS SDXL', 'AYS SD1', 'AYS SVD', 'GITS[coeff=1.2]', 'LTXV[default]']
 
@@ -258,7 +259,64 @@ class AdvancedPixelTiledKSampleUpscalerProviderPipe:
         
         return (upscaler, )
 
+from custom_nodes.comfyui_ultimatesdupscale.nodes import MODES, SEAM_FIX_MODES
+
+class ULtimate_16KANDUPUpscaler():
+
+    def __init__(self):
+        self.ultimateUpscale = ULtimate_16KANDUPUpscalerService()
     
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": 
+            {
+                "image" : ("IMAGE",),
+                # Sampling Params
+                "model" : ("MODEL",),
+                "positive" :("CONDITIONING",),
+                "negative" : ("CONDITIONING",),
+                "vae" :("VAE",),
+                "upscale_by" : ("FLOAT", {"default": 2, "min": 0.05, "max": 4, "step": 0.05}),
+                "seed" :("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                "steps" : ("INT", {"default": 20, "min": 1, "max": 10000, "step": 1}),
+                "sampler_name" : (comfy.samplers.KSampler.SAMPLERS,),
+                "scheduler" : (comfy.samplers.KSampler.SCHEDULERS,),
+                # Upscale Params
+                "upscale_model" : ("UPSCALE_MODEL",),
+                "pickle_prefix": ("STRING", {"default": "ComfyUI", "tooltip": "The prefix for the file to save."}),
+                "tile_num" :("INT", {"default": 2, "min": 0, "max": 0xffffffffffffffff}),
+                "mode_type" : (list(MODES.keys()),),
+                "mask_blur" :("INT", {"default": 8, "min": 0, "max": 64, "step": 1}),
+                "tile_padding" : ("INT", {"default": 32, "min": 0, "max": MAX_RESOLUTION, "step": 8}),
+                # Seam fix params
+                "seam_fix_mode" : (list(SEAM_FIX_MODES.keys()),),
+                "seam_fix_denoise" : ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "seam_fix_width" : ("INT", {"default": 64, "min": 0, "max": MAX_RESOLUTION, "step": 8}),
+                "seam_fix_mask_blur" : ("INT", {"default": 8, "min": 0, "max": 64, "step": 1}),
+                "seam_fix_padding" : ("INT", {"default": 16, "min": 0, "max": MAX_RESOLUTION, "step": 8}),
+                # Misc
+                "force_uniform_tiles" : ("BOOLEAN", {"default": True}),
+                "tiled_decode" : ("BOOLEAN", {"default": False}),
+            },
+                }
+    
+    RETURN_TYPES = ("IMAGE",)
+    FUNCTION = "upscale"
+    CATEGORY = "image/upscaling"
+
+    def upscale(self, image, model, positive, negative, vae, upscale_by, seed, steps,
+                sampler_name, scheduler, upscale_model, pickle_prefix, tile_num, mode_type, 
+                mask_blur, tile_padding, seam_fix_mode, seam_fix_denoise, seam_fix_mask_blur,
+                seam_fix_width, seam_fix_padding, force_uniform_tiles, tiled_decode, 
+                custom_sampler=None, custom_sigmas=None):
+        
+        return self.ultimateUpscale.upscale(
+            image=image, model=model, positive=positive, negative=negative, vae=vae, upscale_by=upscale_by, seed=seed, steps=steps, sampler_name=sampler_name, scheduler=scheduler, 
+            upscale_model=upscale_model, pickle_prefix=pickle_prefix, tile_num=tile_num, mode_type=mode_type, mask_blur=mask_blur, tile_padding=tile_padding, 
+            seam_fix_mode=seam_fix_mode, seam_fix_denoise=seam_fix_denoise, seam_fix_mask_blur=seam_fix_mask_blur, seam_fix_width=seam_fix_width, 
+            seam_fix_padding=seam_fix_padding, force_uniform_tiles=force_uniform_tiles, tiled_decode=tiled_decode, custom_sampler=custom_sampler, custom_sigmas=custom_sigmas
+        )
 
 NODE_CLASS_MAPPINGS = {
     "EUP - Iterative Latent Upscaler": IterativeLatentUpscale,
@@ -266,6 +324,7 @@ NODE_CLASS_MAPPINGS = {
     "EUP - Pixel TiledKSample Upscaler Provider Pipe": PixelTiledKSampleUpscalerProviderPipe,
     "EUP - Advanced Pixel TiledKSample Upscaler Provider": AdvancedPixelTiledKSampleUpscalerProvider,
     "EUP - Advanced Pixel TiledKSample Upscaler Provider Pipe": AdvancedPixelTiledKSampleUpscalerProviderPipe,
+    "EUP - Ultimate 16K and Up Tiling": ULtimate_16KANDUPUpscaler,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
