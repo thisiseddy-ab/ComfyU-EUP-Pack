@@ -23,3 +23,41 @@ class GetImageSize:
 
     def execute(self, image):
         return self.imageService.getImageSize(image)
+    
+
+class CustomImageSize:
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "biggest_size": ("INT", {"default": 1352, "min": 125, "max": 8192}),
+                "width": ("INT", {"default": 1352, "min": 125, "max": 8192}),
+                "width": ("INT", {"default": 1352, "min": 125, "max": 8192}),
+            }
+        }
+
+    RETURN_TYPES = ("INT", "INT",)
+    RETURN_NAMES = ("width", "height",)
+    FUNCTION = "execute"
+    CATEGORY = "EUP - Ultimate Pack/image"
+
+    def execute(self, biggest_size, width, height):
+        if width >= height:
+            scale_factor = biggest_size / width
+        else:
+            scale_factor = biggest_size / height
+
+        new_width = int(round(width * scale_factor))
+        new_height = int(round(height * scale_factor))
+
+        return (new_width, new_height)
+    
+
+NODE_CLASS_MAPPINGS = {
+    "EUP - Get Image Size": GetImageSize,
+    "EUP - Custom Image Size": CustomImageSize,
+}
+
+NODE_DISPLAY_NAME_MAPPINGS = {
+}

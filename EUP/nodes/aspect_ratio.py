@@ -1,7 +1,7 @@
 import torch
 
 class CustomAspectRatio():
-    ASPECT_RATIO = ["custom",
+    ASPECT_RATIO = [
                         ## Square ##
                         "1:1 - Square",
                         ## Portrait ##
@@ -21,6 +21,7 @@ class CustomAspectRatio():
                         "2:3 - Portrait",
                         "3:4 - Portrait",
                         "3:5 - Portrait",
+                        "3:6 - Landscape",
                         "3:7 - Portrait",
                         "4:5 - Portrait",
                         "4:7 - Portrait",
@@ -73,6 +74,7 @@ class CustomAspectRatio():
                         "5:3 - Landscape",
                         "5:4 - Landscape",
                         "6:1 - Landscape",
+                        "6:3 - Landscape",
                         "6:5 - Landscape",
                         "7:3 - Landscape",
                         "7:4 - Landscape",
@@ -143,9 +145,35 @@ class CustomAspectRatio():
         latent = torch.zeros([batch_size, 4, height // 8, width // 8])
            
         return(width, height, real_aspect_ratio, upscale_factor, batch_size, {"samples":latent})
+
+class ConvertAspectRatio():
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "aspect_ratio": ("STRING", {"default": "16:9"}),
+            }
+        }
     
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("STRING",)
+    FUNCTION = "Aspect_Ratio"
+    CATEGORY = "EUP - Ultimate Pack/Essential"
+
+    def Aspect_Ratio(self, aspect_ratio: str):
+        '''
+        Convert aspect ratio from to directory name freidly
+        :param aspect_ratio: Aspect ratio in the format "width:height"
+        '''
+        
+        return (aspect_ratio.replace(":", "-"),)
+
+
+
 NODE_CLASS_MAPPINGS = {
     "EUP - Custom Aspect Ratio": CustomAspectRatio,
+    "EUP - Convert Aspect Ratio": ConvertAspectRatio,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {

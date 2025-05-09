@@ -26,7 +26,11 @@ _nodes_to_import_ = [
     "upscaler",
     "tiling",
     "denoise",
-    "blend"
+    "blend",
+    "aspect_ratio",
+    "uuid",
+    "file",
+    "image",
     ]
 
 NODE_CLASS_MAPPINGS = {}
